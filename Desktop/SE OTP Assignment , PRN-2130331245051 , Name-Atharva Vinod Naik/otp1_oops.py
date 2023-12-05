@@ -4,60 +4,78 @@ import smtplib
 from twilio.rest import Client
 
 class OTPGenerator:
-    def __init__(self):
-        self.DIGITS = "0123456789"
-        self.OTP = ""
-
     def generate_otp(self):
+        digits = "0123456789"
+        length = len(digits)
+        otp_value = ""
+
         for _ in range(6):
-            self.OTP += self.DIGITS[math.floor(random.random() * 10)]
-        return self.OTP
+            otp_value += digits[math.floor(random.random() * length)]
+
+        return otp_value
 
 class OTPSender:
-    def __init__(self, account_sid, auth_token, twilio_number, target_number):
+    def __init__(self, account_sid, auth_token, twilio_number):
         self.client = Client(account_sid, auth_token)
         self.TWILIO_NUMBER = twilio_number
-        self.TARGET_NUMBER = target_number
 
-    def send_sms(self, msg):
+    def send_otp_over_mobile(self, phone_no, otp):
         message = self.client.messages.create(
-            body=msg,
+            body=f"Your 6-digit OTP is {otp}",
             from_=self.TWILIO_NUMBER,
-            to=self.TARGET_NUMBER
+            to=f'+91{phone_no}',
         )
-        return message.body
+        print(message.body)
 
-    def send_email(self, subject, body, sender_email, recipient_email, password):
+    def send_otp_over_email(self, email, otp):
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
-        server.login(sender_email, password)
-        email_msg = f"Subject: {subject}\n\n{body}"
-        server.sendmail(sender_email, recipient_email, email_msg)
+        server.login('naikatharva111@gmail.com', 'jbctzddvhpwysdhf')
+        email_message = f'Your 6-digit OTP is {otp}'
+        server.sendmail('naikatharva111@gmail.com', email, email_message)
         server.quit()
+
+class UserInputValidator:
+    @staticmethod
+    def validate_mobile(input_phone_no):
+        return len(input_phone_no) == 10
+
+    @staticmethod
+    def validate_email(input_email):
+        return "@gmail.com" in input_email
+
+    @staticmethod
+    def get_valid_mobile():
+        phone_no_value = input("Enter the number:")
+        return phone_no_value if UserInputValidator.validate_mobile(phone_no_value) else input("Enter a valid number")
+
+    @staticmethod
+    def get_valid_email():
+        email_value = input("Enter the Email:")
+        return email_value if UserInputValidator.validate_email(email_value) else input("Enter a valid email")
 
 # Example usage:
 
-# Initialize OTPGenerator and generate OTP
+# Initialize OTPGenerator
 otp_generator = OTPGenerator()
-otp = otp_generator.generate_otp()
 
-# Initialize OTPSender with Twilio and email credentials
+# Initialize OTPSender with Twilio credentials
 otp_sender = OTPSender(
     account_sid='ACc90b01dc3b9e5727a207731cb591b9a7',
-    auth_token='e82ec90c73f7079a4976d17d09467627',
-    twilio_number='+15856394364',
-    target_number='+919607614198'
+    auth_token='4e9aaa48cbdd9aac7dc4a1f7a6c09c99',
+    twilio_number='+15856394364'
 )
 
-# Send OTP via SMS
-sms_msg = otp_sender.send_sms(f"{otp} is your otp")
-print(sms_msg)
+# Initialize UserInputValidator
+input_validator = UserInputValidator()
 
-# Send OTP via Email
-otp_sender.send_email(
-    subject='OTP for Verification',
-    body=f'Hello, Your OTP is {otp}',
-    sender_email='naikatharva111@gmail.com',
-    recipient_email='naikatharva1111@gmail.com',
-    password='jbctzddvhpwysdhf'
-)
+# Get and validate user input for mobile and email
+user_phone_no = input_validator.get_valid_mobile()
+user_email = input_validator.get_valid_email()
+
+# Generate OTP
+generated_otp = otp_generator.generate_otp()
+
+# Send OTPs
+otp_sender.send_otp_over_mobile(user_phone_no, generated_otp)
+otp_sender.send_otp_over_email(user_email, generated_otp)
